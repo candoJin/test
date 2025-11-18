@@ -254,6 +254,181 @@ export default function ElementRenderer({ element, isEditable = false }) {
           </footer>
         );
 
+      case 'threeColumns':
+        return (
+          <div className={props.className} style={props.style}>
+            <div className="grid grid-cols-3 gap-6">
+              <div className="p-6 bg-gray-100 rounded-lg">
+                <div contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => { if (isEditable) updateElementProps(element.id, { column1: e.target.innerText }); }}>
+                  {props.column1 || '컬럼 1'}
+                </div>
+              </div>
+              <div className="p-6 bg-gray-100 rounded-lg">
+                <div contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => { if (isEditable) updateElementProps(element.id, { column2: e.target.innerText }); }}>
+                  {props.column2 || '컬럼 2'}
+                </div>
+              </div>
+              <div className="p-6 bg-gray-100 rounded-lg">
+                <div contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => { if (isEditable) updateElementProps(element.id, { column3: e.target.innerText }); }}>
+                  {props.column3 || '컬럼 3'}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'hero':
+        return (
+          <div className={props.className} style={props.style}>
+            <h1 className="text-5xl font-bold mb-4" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'title')}>
+              {props.title}
+            </h1>
+            <p className="text-xl mb-8 opacity-90" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'subtitle')}>
+              {props.subtitle}
+            </p>
+            <button className="bg-white text-blue-600 font-bold px-8 py-4 rounded-lg hover:bg-gray-100 transition shadow-lg" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'buttonText')}>
+              {props.buttonText}
+            </button>
+          </div>
+        );
+
+      case 'quote':
+        return (
+          <blockquote className={props.className} style={props.style}>
+            <p className="text-lg mb-2" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'text')}>
+              "{props.text}"
+            </p>
+            <cite className="text-sm text-gray-600" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'author')}>
+              — {props.author}
+            </cite>
+          </blockquote>
+        );
+
+      case 'gallery':
+        return (
+          <div className={props.className} style={props.style}>
+            <img src="https://via.placeholder.com/300x200/3498db/ffffff?text=1" className="w-full h-48 object-cover rounded-lg" alt="Gallery 1" />
+            <img src="https://via.placeholder.com/300x200/e74c3c/ffffff?text=2" className="w-full h-48 object-cover rounded-lg" alt="Gallery 2" />
+            <img src="https://via.placeholder.com/300x200/2ecc71/ffffff?text=3" className="w-full h-48 object-cover rounded-lg" alt="Gallery 3" />
+          </div>
+        );
+
+      case 'pricing':
+        return (
+          <div className={props.className} style={props.style}>
+            <h3 className="text-2xl font-bold mb-4" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'title')}>
+              {props.title}
+            </h3>
+            <div className="text-4xl font-bold mb-6" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'price')}>
+              {props.price}<span className="text-lg text-gray-600">/월</span>
+            </div>
+            <div className="text-gray-600 mb-6" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'features')}>
+              {props.features}
+            </div>
+            <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg transition">
+              선택하기
+            </button>
+          </div>
+        );
+
+      case 'testimonial':
+        return (
+          <div className={props.className} style={props.style}>
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                {props.author?.charAt(0) || 'A'}
+              </div>
+              <div className="flex-1">
+                <p className="text-gray-700 mb-3 italic" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'text')}>
+                  "{props.text}"
+                </p>
+                <p className="font-semibold" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'author')}>
+                  {props.author}
+                </p>
+                <p className="text-sm text-gray-500" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'role')}>
+                  {props.role}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'team':
+        return (
+          <div className={props.className} style={props.style}>
+            <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full mx-auto mb-4"></div>
+            <h3 className="text-xl font-bold mb-2" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'name')}>
+              {props.name}
+            </h3>
+            <p className="text-gray-600" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'role')}>
+              {props.role}
+            </p>
+          </div>
+        );
+
+      case 'features':
+        return (
+          <div className={props.className} style={props.style}>
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white text-2xl flex-shrink-0">
+                ✓
+              </div>
+              <div>
+                <h3 className="text-xl font-bold mb-2" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'title')}>
+                  {props.title}
+                </h3>
+                <p className="text-gray-600" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'description')}>
+                  {props.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'stats':
+        return (
+          <div className={props.className} style={props.style}>
+            <div className="text-5xl font-bold mb-2" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'number')}>
+              {props.number}
+            </div>
+            <div className="text-lg opacity-90" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'label')}>
+              {props.label}
+            </div>
+          </div>
+        );
+
+      case 'cta':
+        return (
+          <div className={props.className} style={props.style}>
+            <h2 className="text-4xl font-bold mb-4" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'title')}>
+              {props.title}
+            </h2>
+            <p className="text-xl mb-8 opacity-90" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'description')}>
+              {props.description}
+            </p>
+            <button className="bg-white text-orange-600 font-bold px-8 py-4 rounded-lg hover:bg-gray-100 transition shadow-lg text-lg" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'buttonText')}>
+              {props.buttonText}
+            </button>
+          </div>
+        );
+
+      case 'timeline':
+        return (
+          <div className={props.className} style={props.style}>
+            <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'year')}>
+              {props.year}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-2xl font-bold mb-2" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'title')}>
+                {props.title}
+              </h3>
+              <p className="text-gray-600" contentEditable={isEditable} suppressContentEditableWarning onBlur={(e) => handleTextEdit(e, 'description')}>
+                {props.description}
+              </p>
+            </div>
+          </div>
+        );
+
       default:
         return <div className="p-4 bg-gray-200 rounded">알 수 없는 컴포넌트: {type}</div>;
     }
