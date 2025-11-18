@@ -1,6 +1,7 @@
 import { useBuilder } from '../context/BuilderContext';
 import { X, ChevronDown, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { HexColorPicker } from 'react-colorful';
 
 export default function AdvancedPropertiesPanel() {
   const { elements, selectedElement, setSelectedElement, updateElementProps } = useBuilder();
@@ -17,6 +18,12 @@ export default function AdvancedPropertiesPanel() {
     effects: true,
     responsive: false,
   });
+  const [bgColor, setBgColor] = useState('#3B82F6');
+  const [textColor, setTextColor] = useState('#1F2937');
+  const [borderColor, setBorderColor] = useState('#D1D5DB');
+  const [showBgPicker, setShowBgPicker] = useState(false);
+  const [showTextPicker, setShowTextPicker] = useState(false);
+  const [showBorderPicker, setShowBorderPicker] = useState(false);
 
   useEffect(() => {
     if (element) {
@@ -31,6 +38,17 @@ export default function AdvancedPropertiesPanel() {
   const handlePropChange = (propName, value) => {
     setLocalProps(prev => ({ ...prev, [propName]: value }));
     updateElementProps(selectedElement, { [propName]: value });
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        handlePropChange('src', reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const toggleSection = (section) => {
@@ -129,6 +147,24 @@ export default function AdvancedPropertiesPanel() {
           <>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
+                이미지 업로드
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition bg-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+              <p className="text-xs text-gray-500 mt-1">이미지를 선택하면 자동으로 임베드됩니다</p>
+            </div>
+            <div className="relative">
+              <div className="absolute top-0 left-0 w-full text-center">
+                <span className="bg-white px-2 text-xs text-gray-500">또는</span>
+              </div>
+              <div className="border-t border-gray-300 my-4"></div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 이미지 URL
               </label>
               <input
@@ -150,6 +186,18 @@ export default function AdvancedPropertiesPanel() {
                 className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition"
               />
             </div>
+            {localProps.src && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  미리보기
+                </label>
+                <img
+                  src={localProps.src}
+                  alt={localProps.alt || '미리보기'}
+                  className="w-full h-32 object-cover rounded-lg border-2 border-gray-300"
+                />
+              </div>
+            )}
           </>
         )}
 
@@ -214,65 +262,190 @@ export default function AdvancedPropertiesPanel() {
     return (
       <div>
         <Section title="📐 레이아웃" name="layout">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Display
-            </label>
-            <select
-              onChange={(e) => addTailwindClass('display', e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-            >
-              <option value="">선택</option>
-              <option value="block">Block</option>
-              <option value="inline-block">Inline Block</option>
-              <option value="inline">Inline</option>
-              <option value="flex">Flex</option>
-              <option value="inline-flex">Inline Flex</option>
-              <option value="grid">Grid</option>
-              <option value="inline-grid">Inline Grid</option>
-              <option value="hidden">Hidden</option>
-            </select>
-          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Display
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {['block', 'flex', 'grid', 'inline-block', 'inline-flex', 'hidden'].map(display => (
+                  <button
+                    key={display}
+                    onClick={() => addTailwindClass('display', display)}
+                    className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-sm font-medium"
+                  >
+                    {display}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Position
-            </label>
-            <select
-              onChange={(e) => addTailwindClass('position', e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-            >
-              <option value="">선택</option>
-              <option value="static">Static</option>
-              <option value="fixed">Fixed</option>
-              <option value="absolute">Absolute</option>
-              <option value="relative">Relative</option>
-              <option value="sticky">Sticky</option>
-            </select>
-          </div>
+            {/* Flexbox Controls */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Flex Direction
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: 'flex-row', label: 'Row →' },
+                  { value: 'flex-col', label: 'Column ↓' },
+                  { value: 'flex-row-reverse', label: '← Row Rev' },
+                  { value: 'flex-col-reverse', label: '↑ Col Rev' },
+                ].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => addTailwindClass('flexDirection', value)}
+                    className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-sm font-medium"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Width
-            </label>
-            <input
-              type="text"
-              placeholder="예: w-full, w-1/2, w-64"
-              onChange={(e) => addTailwindClass('width', e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Justify Content
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 'justify-start', label: 'Start' },
+                  { value: 'justify-center', label: 'Center' },
+                  { value: 'justify-end', label: 'End' },
+                  { value: 'justify-between', label: 'Between' },
+                  { value: 'justify-around', label: 'Around' },
+                  { value: 'justify-evenly', label: 'Evenly' },
+                ].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => addTailwindClass('justify', value)}
+                    className="px-2 py-2 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-xs font-medium"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Height
-            </label>
-            <input
-              type="text"
-              placeholder="예: h-full, h-screen, h-64"
-              onChange={(e) => addTailwindClass('height', e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Align Items
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 'items-start', label: 'Start' },
+                  { value: 'items-center', label: 'Center' },
+                  { value: 'items-end', label: 'End' },
+                  { value: 'items-stretch', label: 'Stretch' },
+                  { value: 'items-baseline', label: 'Baseline' },
+                ].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => addTailwindClass('items', value)}
+                    className="px-2 py-2 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-xs font-medium"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Flex Wrap
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 'flex-wrap', label: 'Wrap' },
+                  { value: 'flex-nowrap', label: 'No Wrap' },
+                  { value: 'flex-wrap-reverse', label: 'Wrap Rev' },
+                ].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => addTailwindClass('flexWrap', value)}
+                    className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-sm font-medium"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gap
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {['0', '1', '2', '3', '4', '6', '8', '12'].map(gap => (
+                  <button
+                    key={gap}
+                    onClick={() => addTailwindClass('gap', `gap-${gap}`)}
+                    className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-sm font-medium"
+                  >
+                    {gap}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Grid Controls */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Grid Columns
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {['1', '2', '3', '4', '6', '12'].map(cols => (
+                  <button
+                    key={cols}
+                    onClick={() => addTailwindClass('gridCols', `grid-cols-${cols}`)}
+                    className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-sm font-medium"
+                  >
+                    {cols}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Position
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {['static', 'relative', 'absolute', 'fixed', 'sticky'].map(pos => (
+                  <button
+                    key={pos}
+                    onClick={() => addTailwindClass('position', pos)}
+                    className="px-3 py-2 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-sm font-medium"
+                  >
+                    {pos}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Width
+              </label>
+              <input
+                type="text"
+                placeholder="예: w-full, w-1/2, w-64"
+                onChange={(e) => addTailwindClass('width', e.target.value)}
+                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Height
+              </label>
+              <input
+                type="text"
+                placeholder="예: h-full, h-screen, h-64"
+                onChange={(e) => addTailwindClass('height', e.target.value)}
+                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+              />
+            </div>
           </div>
         </Section>
 
@@ -456,47 +629,189 @@ export default function AdvancedPropertiesPanel() {
         </Section>
 
         <Section title="🎨 Colors" name="colors">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Background Color
-            </label>
-            <input
-              type="text"
-              placeholder="예: bg-blue-500, bg-gradient-to-r from-purple-500 to-pink-500"
-              onChange={(e) => handlePropChange('className', (localProps.className || '').replace(/bg-\S+/g, '') + ' ' + e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-            />
-          </div>
+          <div className="space-y-4">
+            {/* Background Color */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Background Color
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowBgPicker(!showBgPicker)}
+                  className="w-12 h-12 rounded-lg border-2 border-gray-300 shadow-sm hover:border-gray-400 transition"
+                  style={{ backgroundColor: bgColor }}
+                  title="색상 선택기 열기"
+                />
+                <input
+                  type="text"
+                  value={bgColor}
+                  onChange={(e) => {
+                    setBgColor(e.target.value);
+                    const currentStyle = localProps.style || {};
+                    handlePropChange('style', { ...currentStyle, backgroundColor: e.target.value });
+                  }}
+                  className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-mono text-sm"
+                  placeholder="#3B82F6"
+                />
+              </div>
+              {showBgPicker && (
+                <div className="mt-2 p-3 bg-white rounded-lg shadow-xl border-2 border-gray-200">
+                  <HexColorPicker
+                    color={bgColor}
+                    onChange={(color) => {
+                      setBgColor(color);
+                      const currentStyle = localProps.style || {};
+                      handlePropChange('style', { ...currentStyle, backgroundColor: color });
+                    }}
+                  />
+                  <button
+                    onClick={() => setShowBgPicker(false)}
+                    className="w-full mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                  >
+                    닫기
+                  </button>
+                </div>
+              )}
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Text Color
-            </label>
-            <input
-              type="text"
-              placeholder="예: text-gray-800, text-white"
-              onChange={(e) => {
-                const current = localProps.className || '';
-                const without = current.split(' ').filter(c => !c.startsWith('text-') || c.includes('text-xs') || c.includes('text-sm') || c.includes('text-lg')).join(' ');
-                handlePropChange('className', without + ' ' + e.target.value);
-              }}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-            />
-          </div>
+            {/* Text Color */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Text Color
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowTextPicker(!showTextPicker)}
+                  className="w-12 h-12 rounded-lg border-2 border-gray-300 shadow-sm hover:border-gray-400 transition"
+                  style={{ backgroundColor: textColor }}
+                  title="색상 선택기 열기"
+                />
+                <input
+                  type="text"
+                  value={textColor}
+                  onChange={(e) => {
+                    setTextColor(e.target.value);
+                    const currentStyle = localProps.style || {};
+                    handlePropChange('style', { ...currentStyle, color: e.target.value });
+                  }}
+                  className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-mono text-sm"
+                  placeholder="#1F2937"
+                />
+              </div>
+              {showTextPicker && (
+                <div className="mt-2 p-3 bg-white rounded-lg shadow-xl border-2 border-gray-200">
+                  <HexColorPicker
+                    color={textColor}
+                    onChange={(color) => {
+                      setTextColor(color);
+                      const currentStyle = localProps.style || {};
+                      handlePropChange('style', { ...currentStyle, color: color });
+                    }}
+                  />
+                  <button
+                    onClick={() => setShowTextPicker(false)}
+                    className="w-full mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                  >
+                    닫기
+                  </button>
+                </div>
+              )}
+            </div>
 
-          <div className="grid grid-cols-5 gap-2">
-            {['red', 'blue', 'green', 'yellow', 'purple', 'pink', 'indigo', 'gray', 'black', 'white'].map(color => (
-              <button
-                key={color}
-                onClick={() => {
+            {/* Border Color */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Border Color
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowBorderPicker(!showBorderPicker)}
+                  className="w-12 h-12 rounded-lg border-2 border-gray-300 shadow-sm hover:border-gray-400 transition"
+                  style={{ backgroundColor: borderColor }}
+                  title="색상 선택기 열기"
+                />
+                <input
+                  type="text"
+                  value={borderColor}
+                  onChange={(e) => {
+                    setBorderColor(e.target.value);
+                    const currentStyle = localProps.style || {};
+                    handlePropChange('style', { ...currentStyle, borderColor: e.target.value });
+                  }}
+                  className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none font-mono text-sm"
+                  placeholder="#D1D5DB"
+                />
+              </div>
+              {showBorderPicker && (
+                <div className="mt-2 p-3 bg-white rounded-lg shadow-xl border-2 border-gray-200">
+                  <HexColorPicker
+                    color={borderColor}
+                    onChange={(color) => {
+                      setBorderColor(color);
+                      const currentStyle = localProps.style || {};
+                      handlePropChange('style', { ...currentStyle, borderColor: color });
+                    }}
+                  />
+                  <button
+                    onClick={() => setShowBorderPicker(false)}
+                    className="w-full mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                  >
+                    닫기
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Color Swatches */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                빠른 배경색 선택
+              </label>
+              <div className="grid grid-cols-5 gap-2">
+                {[
+                  { name: 'red', color: '#EF4444' },
+                  { name: 'blue', color: '#3B82F6' },
+                  { name: 'green', color: '#10B981' },
+                  { name: 'yellow', color: '#F59E0B' },
+                  { name: 'purple', color: '#8B5CF6' },
+                  { name: 'pink', color: '#EC4899' },
+                  { name: 'indigo', color: '#6366F1' },
+                  { name: 'gray', color: '#6B7280' },
+                  { name: 'black', color: '#000000' },
+                  { name: 'white', color: '#FFFFFF' },
+                ].map(({ name, color }) => (
+                  <button
+                    key={name}
+                    onClick={() => {
+                      setBgColor(color);
+                      const currentStyle = localProps.style || {};
+                      handlePropChange('style', { ...currentStyle, backgroundColor: color });
+                    }}
+                    className="h-10 rounded border-2 border-gray-300 hover:border-blue-500 transition shadow-sm"
+                    style={{ backgroundColor: color }}
+                    title={name}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Tailwind Classes (Optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                또는 Tailwind 클래스 사용
+              </label>
+              <input
+                type="text"
+                placeholder="예: bg-gradient-to-r from-purple-500 to-pink-500"
+                onChange={(e) => {
                   const current = localProps.className || '';
-                  const without = current.split(' ').filter(c => !c.startsWith('bg-')).join(' ');
-                  handlePropChange('className', without + ` bg-${color}-500`);
+                  const without = current.split(' ').filter(c => !c.startsWith('bg-') && !c.startsWith('from-') && !c.startsWith('to-') && !c.startsWith('via-')).join(' ');
+                  handlePropChange('className', without + ' ' + e.target.value);
                 }}
-                className={`h-10 rounded border-2 border-gray-300 hover:border-gray-600 ${color === 'white' ? 'bg-white' : color === 'black' ? 'bg-black' : `bg-${color}-500`}`}
-                title={color}
-              ></button>
-            ))}
+                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">그라디언트, 패턴 등 고급 배경 효과</p>
+            </div>
           </div>
         </Section>
 

@@ -2,7 +2,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useBuilder } from '../context/BuilderContext';
 import SortableElement from './SortableElement';
-import { Save, Download, Trash2, Undo, Redo, Copy, Clipboard } from 'lucide-react';
+import { Save, Download, Trash2, Undo, Redo, Copy, Clipboard, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function Canvas() {
@@ -10,6 +10,7 @@ export default function Canvas() {
     elements,
     clearAll,
     exportHTML,
+    exportReact,
     isDragging,
     undo,
     redo,
@@ -20,7 +21,9 @@ export default function Canvas() {
     pasteElement,
     clipboard,
     deleteElement,
-    duplicateElement
+    duplicateElement,
+    alignElement,
+    loadTemplate
   } = useBuilder();
 
   const { setNodeRef } = useDroppable({ id: 'canvas' });
@@ -95,9 +98,28 @@ export default function Canvas() {
     <div className="flex-1 bg-gray-100 flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="bg-white shadow-md p-4 flex justify-between items-center border-b-2 border-gray-200">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">✨ 웹사이트 빌더</h1>
-          <p className="text-xs text-gray-500 mt-1">전문가급 비주얼 에디터</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">✨ 웹사이트 빌더</h1>
+            <p className="text-xs text-gray-500 mt-1">전문가급 비주얼 에디터</p>
+          </div>
+          <div>
+            <select
+              onChange={(e) => {
+                if (e.target.value && window.confirm('현재 작업이 사라집니다. 템플릿을 불러오시겠습니까?')) {
+                  loadTemplate(e.target.value);
+                }
+                e.target.value = '';
+              }}
+              className="px-4 py-2 border-2 border-blue-500 rounded-lg focus:outline-none focus:border-purple-500 bg-gradient-to-r from-blue-50 to-purple-50 font-semibold text-sm"
+            >
+              <option value="">📋 템플릿 선택</option>
+              <option value="landing">🚀 랜딩 페이지</option>
+              <option value="portfolio">💼 포트폴리오</option>
+              <option value="pricing">💰 가격 안내</option>
+              <option value="blog">📝 블로그</option>
+            </select>
+          </div>
         </div>
         <div className="flex gap-2">
           <button
@@ -131,6 +153,30 @@ export default function Canvas() {
 
           {selectedElement && (
             <>
+              <button
+                onClick={() => alignElement(selectedElement, 'left')}
+                className="flex items-center gap-2 px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
+                title="왼쪽 정렬"
+              >
+                <AlignLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => alignElement(selectedElement, 'center')}
+                className="flex items-center gap-2 px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
+                title="가운데 정렬"
+              >
+                <AlignCenter className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => alignElement(selectedElement, 'right')}
+                className="flex items-center gap-2 px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
+                title="오른쪽 정렬"
+              >
+                <AlignRight className="w-4 h-4" />
+              </button>
+
+              <div className="w-px bg-gray-300 mx-2"></div>
+
               <button
                 onClick={() => copyElement(selectedElement)}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
@@ -184,9 +230,18 @@ export default function Canvas() {
           <button
             onClick={exportHTML}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
+            title="HTML로 내보내기"
           >
             <Download className="w-4 h-4" />
-            <span className="hidden lg:inline">내보내기</span>
+            <span className="hidden lg:inline">HTML</span>
+          </button>
+          <button
+            onClick={exportReact}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors duration-200 font-semibold shadow-md hover:shadow-lg"
+            title="React 컴포넌트로 내보내기"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden lg:inline">React</span>
           </button>
         </div>
       </div>

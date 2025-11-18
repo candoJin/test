@@ -160,6 +160,68 @@ export const BuilderProvider = ({ children }) => {
     addToHistory(newElements);
   };
 
+  const alignElement = (id, alignment) => {
+    const newElements = elements.map(el => {
+      if (el.id === id) {
+        const className = el.props.className || '';
+        // Remove existing text-align classes
+        const filtered = className.split(' ').filter(c => !c.startsWith('text-left') && !c.startsWith('text-center') && !c.startsWith('text-right')).join(' ');
+        return {
+          ...el,
+          props: {
+            ...el.props,
+            className: `${filtered} text-${alignment}`.trim(),
+          },
+        };
+      }
+      return el;
+    });
+    setElements(newElements);
+    addToHistory(newElements);
+  };
+
+  const loadTemplate = (templateId) => {
+    const templates = {
+      landing: [
+        { id: 'nav-1', type: 'navbar', props: getDefaultProps('navbar') },
+        { id: 'hero-1', type: 'hero', props: getDefaultProps('hero') },
+        { id: 'features-1', type: 'features', props: getDefaultProps('features') },
+        { id: 'cta-1', type: 'cta', props: getDefaultProps('cta') },
+        { id: 'footer-1', type: 'footer', props: getDefaultProps('footer') },
+      ],
+      portfolio: [
+        { id: 'nav-1', type: 'navbar', props: getDefaultProps('navbar') },
+        { id: 'heading-1', type: 'heading', props: { ...getDefaultProps('heading'), text: '포트폴리오' } },
+        { id: 'gallery-1', type: 'gallery', props: getDefaultProps('gallery') },
+        { id: 'team-1', type: 'team', props: getDefaultProps('team') },
+        { id: 'footer-1', type: 'footer', props: getDefaultProps('footer') },
+      ],
+      pricing: [
+        { id: 'hero-1', type: 'hero', props: { ...getDefaultProps('hero'), title: '가격 안내', subtitle: '최적의 플랜을 선택하세요' } },
+        { id: 'cols-1', type: 'threeColumns', props: getDefaultProps('threeColumns') },
+        { id: 'pricing-1', type: 'pricing', props: { ...getDefaultProps('pricing'), title: '기본', price: '$9' } },
+        { id: 'pricing-2', type: 'pricing', props: { ...getDefaultProps('pricing'), title: '프로', price: '$29' } },
+        { id: 'pricing-3', type: 'pricing', props: { ...getDefaultProps('pricing'), title: '엔터프라이즈', price: '$99' } },
+        { id: 'footer-1', type: 'footer', props: getDefaultProps('footer') },
+      ],
+      blog: [
+        { id: 'nav-1', type: 'navbar', props: getDefaultProps('navbar') },
+        { id: 'heading-1', type: 'heading', props: { ...getDefaultProps('heading'), text: '블로그' } },
+        { id: 'card-1', type: 'card', props: getDefaultProps('card') },
+        { id: 'card-2', type: 'card', props: getDefaultProps('card') },
+        { id: 'card-3', type: 'card', props: getDefaultProps('card') },
+        { id: 'footer-1', type: 'footer', props: getDefaultProps('footer') },
+      ],
+    };
+
+    const template = templates[templateId];
+    if (template) {
+      setElements(template);
+      addToHistory(template);
+      setSelectedElement(null);
+    }
+  };
+
   const clearAll = () => {
     if (window.confirm('모든 요소를 삭제하시겠습니까?')) {
       setElements([]);
@@ -168,6 +230,64 @@ export const BuilderProvider = ({ children }) => {
       setHistoryIndex(-1);
       localStorage.removeItem('website-builder-project');
     }
+  };
+
+  const exportReact = () => {
+    const componentCode = generateReactCode(elements);
+
+    const fullCode = `import React from 'react';
+import './App.css'; // Tailwind CSS import
+
+export default function MyWebsite() {
+  return (
+    <div className="min-h-screen">
+${componentCode}
+    </div>
+  );
+}`;
+
+    const blob = new Blob([fullCode], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'MyWebsite.jsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const generateReactCode = (elements) => {
+    return elements.map(el => {
+      const { type, props } = el;
+      return generateElementReact(type, props);
+    }).join('\n\n');
+  };
+
+  const generateElementReact = (type, props) => {
+    const className = props.className || '';
+    const style = props.style ? ` style={{${Object.entries(props.style).map(([key, value]) => `${key}: '${value}'`).join(', ')}}}` : '';
+
+    const templates = {
+      heading: `      <h1 className="${className}"${style}>${props.text || '제목'}</h1>`,
+      paragraph: `      <p className="${className}"${style}>${props.text || '본문'}</p>`,
+      button: `      <button className="${className}"${style}>${props.text || '버튼'}</button>`,
+      image: `      <img src="${props.src || ''}" alt="${props.alt || ''}" className="${className}"${style} />`,
+      container: `      <div className="${className}"${style}>${props.content || '컨테이너'}</div>`,
+      section: `      <section className="${className}"${style}>
+        <h2>${props.title || '섹션 제목'}</h2>
+        <p>${props.content || '섹션 내용'}</p>
+      </section>`,
+      hero: `      <div className="${className}"${style}>
+        <h1 className="text-5xl font-bold mb-4">${props.title || '제목'}</h1>
+        <p className="text-xl mb-8">${props.subtitle || '부제목'}</p>
+        <button className="bg-white text-blue-600 font-bold px-8 py-4 rounded-lg">${props.buttonText || '버튼'}</button>
+      </div>`,
+      card: `      <div className="${className}"${style}>
+        <h3 className="text-xl font-bold mb-3">${props.title || '제목'}</h3>
+        <p>${props.content || '내용'}</p>
+      </div>`,
+    };
+
+    return templates[type] || `      <div className="${className}">${type}</div>`;
   };
 
   const exportHTML = () => {
@@ -248,8 +368,11 @@ ${html}
     copyElement,
     pasteElement,
     moveElement,
+    alignElement,
+    loadTemplate,
     clearAll,
     exportHTML,
+    exportReact,
     undo,
     redo,
   };
