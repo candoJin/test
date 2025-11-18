@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웹사이트 빌더 - 실시간 미리보기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 왼쪽 컴포넌트 패널 */
+        .components-panel {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .components-panel h2 {
+            margin-bottom: 20px;
+            font-size: 20px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .component-block {
+            background: #34495e;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: move;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .component-block:hover {
+            background: #3498db;
+            transform: translateX(5px);
+            border-color: #2980b9;
+        }
+
+        .component-block:active {
+            cursor: grabbing;
+        }
+
+        .component-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
+        /* 중앙 에디터 영역 */
+        .editor-area {
+            flex: 1;
+            background: #ecf0f1;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid #bdc3c7;
+        }
+
+        .editor-header {
+            background: white;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .editor-header h1 {
+            font-size: 24px;
+            color: #2c3e50;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .canvas {
+            min-height: 500px;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .canvas.drag-over {
+            background: #d5f4e6;
+            border: 3px dashed #2ecc71;
+        }
+
+        .canvas-placeholder {
+            text-align: center;
+            padding: 100px 20px;
+            color: #95a5a6;
+            font-size: 18px;
+        }
+
+        /* 오른쪽 라이브 프리뷰 */
+        .preview-panel {
+            flex: 1;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-header {
+            background: #34495e;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-header h2 {
+            font-size: 20px;
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .device-btn {
+            background: #2c3e50;
+            color: white;
+            border: 2px solid #3498db;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .device-btn:hover, .device-btn.active {
+            background: #3498db;
+        }
+
+        .preview-content {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            background: #f8f9fa;
+        }
+
+        .preview-frame {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin: 0 auto;
+            transition: all 0.3s ease;
+        }
+
+        .preview-frame.desktop {
+            max-width: 100%;
+        }
+
+        .preview-frame.tablet {
+            max-width: 768px;
+        }
+
+        .preview-frame.mobile {
+            max-width: 375px;
+        }
+
+        /* 드롭된 요소 스타일 */
+        .dropped-element {
+            position: relative;
+            margin: 10px 0;
+            padding: 15px;
+            border: 2px solid #ecf0f1;
+            border-radius: 5px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .dropped-element:hover {
+            border-color: #3498db;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+        }
+
+        .dropped-element.selected {
+            border-color: #2ecc71;
+            box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+        }
+
+        .element-controls {
+            position: absolute;
+            top: -15px;
+            right: 10px;
+            display: none;
+            gap: 5px;
+        }
+
+        .dropped-element:hover .element-controls,
+        .dropped-element.selected .element-controls {
+            display: flex;
+        }
+
+        .control-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+
+        .control-btn.delete {
+            background: #e74c3c;
+        }
+
+        .control-btn.delete:hover {
+            background: #c0392b;
+        }
+
+        /* 속성 편집 패널 */
+        .properties-panel {
+            position: fixed;
+            right: -350px;
+            top: 0;
+            width: 350px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .properties-panel.open {
+            right: 0;
+        }
+
+        .properties-header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .properties-body {
+            padding: 20px;
+        }
+
+        .property-group {
+            margin-bottom: 20px;
+        }
+
+        .property-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .property-group input,
+        .property-group select,
+        .property-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ecf0f1;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .property-group input:focus,
+        .property-group select:focus,
+        .property-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .property-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* 컴포넌트 카테고리 */
+        .component-category {
+            margin-bottom: 25px;
+        }
+
+        .category-title {
+            font-size: 14px;
+            color: #95a5a6;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* 애니메이션 */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropped-element {
+            animation: slideIn 0.3s ease;
+        }
+
+        /* 스크롤바 스타일 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* 토스트 알림 */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2c3e50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
+            background: #2ecc71;
+        }
+
+        .toast.error {
+            background: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 왼쪽: 컴포넌트 패널 -->
+        <div class="components-panel">
+            <h2>📦 컴포넌트</h2>
+
+            <div class="component-category">
+                <div class="category-title">레이아웃</div>
+                <div class="component-block" draggable="true" data-type="container">
+                    <span class="component-icon">📐</span>
+                    <span>컨테이너</span>
+                </div>
+                <div class="component-block" draggable="true" data-type="section">
+                    <span class="component-icon">📄</span>
+                    <span>섹션</span>
+                </div>
+                <div class="component-block" draggable="true" data-type="columns">
+                    <span class="component-icon">⚡</span>
+                    <span>컬럼 (2단)</span>
+                </div>
+            </div>
+
+            <div class="component-category">
+                <div class="category-title">텍스트</div>
+                <div class="component-block" draggable="true" data-type="heading">
+                    <span class="component-icon">📝</span>
+                    <span>제목</span>
+                </div>
+                <div class="component-block" draggable="true" data-type="paragraph">
+                    <span class="component-icon">📋</span>
+                    <span>본문</span>
+                </div>
+            </div>
+
+            <div class="component-category">
+                <div class="category-title">미디어</div>
+                <div class="component-block" draggable="true" data-type="image">
+                    <span class="component-icon">🖼️</span>
+                    <span>이미지</span>
+                </div>
+                <div class="component-block" draggable="true" data-type="video">
+                    <span class="component-icon">🎥</span>
+                    <span>비디오</span>
+                </div>
+            </div>
+
+            <div class="component-category">
+                <div class="category-title">요소</div>
+                <div class="component-block" draggable="true" data-type="button">
+                    <span class="component-icon">🔘</span>
+                    <span>버튼</span>
+                </div>
+                <div class="component-block" draggable="true" data-type="form">
+                    <span class="component-icon">📝</span>
+                    <span>폼</span>
+                </div>
+                <div class="component-block" draggable="true" data-type="card">
+                    <span class="component-icon">🎴</span>
+                    <span>카드</span>
+                </div>
+                <div class="component-block" draggable="true" data-type="navbar">
+                    <span class="component-icon">🧭</span>
+                    <span>내비게이션바</span>
+                </div>
+                <div class="component-block" draggable="true" data-type="footer">
+                    <span class="component-icon">⬇️</span>
+                    <span>푸터</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 중앙: 에디터 영역 -->
+        <div class="editor-area">
+            <div class="editor-header">
+                <h1>✨ 웹사이트 빌더</h1>
+                <div class="action-buttons">
+                    <button class="btn btn-danger" onclick="clearCanvas()">🗑️ 초기화</button>
+                    <button class="btn btn-primary" onclick="exportCode()">💾 코드 내보내기</button>
+                    <button class="btn btn-success" onclick="saveProject()">💾 저장</button>
+                </div>
+            </div>
+            <div class="canvas" id="canvas">
+                <div class="canvas-placeholder">
+                    👈 왼쪽에서 컴포넌트를 드래그하여 여기에 놓으세요
+                </div>
+            </div>
+        </div>
+
+        <!-- 오른쪽: 라이브 프리뷰 -->
+        <div class="preview-panel">
+            <div class="preview-header">
+                <h2>👁️ 실시간 미리보기</h2>
+                <div class="preview-controls">
+                    <button class="device-btn active" onclick="setPreviewSize('desktop')">💻 데스크톱</button>
+                    <button class="device-btn" onclick="setPreviewSize('tablet')">📱 태블릿</button>
+                    <button class="device-btn" onclick="setPreviewSize('mobile')">📱 모바일</button>
+                </div>
+            </div>
+            <div class="preview-content">
+                <div class="preview-frame desktop" id="preview">
+                    <div style="text-align: center; padding: 50px; color: #95a5a6;">
+                        여기에 실시간 미리보기가 표시됩니다
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 속성 편집 패널 -->
+    <div class="properties-panel" id="propertiesPanel">
+        <div class="properties-header">
+            <h3>⚙️ 속성 편집</h3>
+            <button class="control-btn" onclick="closeProperties()">✕</button>
+        </div>
+        <div class="properties-body" id="propertiesBody">
+            <p style="color: #95a5a6; text-align: center; padding: 20px;">
+                요소를 선택하여 속성을 편집하세요
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let selectedElement = null;
+        let elementCounter = 0;
+        let elements = [];
+
+        // 드래그 시작
+        document.querySelectorAll('.component-block').forEach(block => {
+            block.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('componentType', e.target.dataset.type);
+                e.target.style.opacity = '0.5';
+            });
+
+            block.addEventListener('dragend', (e) => {
+                e.target.style.opacity = '1';
+            });
+        });
+
+        // 캔버스 드래그 오버
+        const canvas = document.getElementById('canvas');
+        canvas.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            canvas.classList.add('drag-over');
+        });
+
+        canvas.addEventListener('dragleave', () => {
+            canvas.classList.remove('drag-over');
+        });
+
+        // 드롭 처리
+        canvas.addEventListener('drop', (e) => {
+            e.preventDefault();
+            canvas.classList.remove('drag-over');
+
+            const componentType = e.dataTransfer.getData('componentType');
+            if (componentType) {
+                // 플레이스홀더 제거
+                const placeholder = canvas.querySelector('.canvas-placeholder');
+                if (placeholder) {
+                    placeholder.remove();
+                }
+
+                addComponent(componentType);
+            }
+        });
+
+        // 컴포넌트 추가
+        function addComponent(type) {
+            const id = ++elementCounter;
+            const element = document.createElement('div');
+            element.className = 'dropped-element';
+            element.dataset.id = id;
+            element.dataset.type = type;
+
+            let content = getComponentHTML(type, id);
+            element.innerHTML = content + `
+                <div class="element-controls">
+                    <button class="control-btn" onclick="editElement(${id})" title="편집">✏️</button>
+                    <button class="control-btn delete" onclick="deleteElement(${id})" title="삭제">🗑️</button>
+                </div>
+            `;
+
+            element.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('control-btn')) {
+                    selectElement(id);
+                }
+            });
+
+            canvas.appendChild(element);
+
+            // 요소 정보 저장
+            elements.push({
+                id: id,
+                type: type,
+                element: element
+            });
+
+            // 실시간 미리보기 업데이트
+            updatePreview();
+
+            showToast('컴포넌트가 추가되었습니다!', 'success');
+        }
+
+        // 컴포넌트 HTML 생성
+        function getComponentHTML(type, id) {
+            const templates = {
+                heading: `<h1 id="element-${id}" contenteditable="true" style="color: #2c3e50; margin-bottom: 10px;">제목을 입력하세요</h1>`,
+                paragraph: `<p id="element-${id}" contenteditable="true" style="color: #34495e; line-height: 1.6;">본문 텍스트를 입력하세요. 이곳을 클릭하여 편집할 수 있습니다.</p>`,
+                button: `<button id="element-${id}" style="background: #3498db; color: white; padding: 12px 30px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: 600;">버튼</button>`,
+                image: `<img id="element-${id}" src="https://via.placeholder.com/400x200/3498db/ffffff?text=이미지" alt="이미지" style="max-width: 100%; height: auto; border-radius: 8px;">`,
+                video: `<div id="element-${id}" style="background: #34495e; color: white; padding: 100px 20px; text-align: center; border-radius: 8px;">🎥 비디오 플레이어<br><small>비디오 URL을 설정하세요</small></div>`,
+                container: `<div id="element-${id}" style="padding: 30px; background: #ecf0f1; border-radius: 8px; min-height: 100px;">컨테이너 영역</div>`,
+                section: `<section id="element-${id}" style="padding: 40px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; text-align: center;"><h2>섹션 제목</h2><p>섹션 내용을 입력하세요</p></section>`,
+                columns: `<div id="element-${id}" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"><div style="padding: 20px; background: #ecf0f1; border-radius: 8px;">컬럼 1</div><div style="padding: 20px; background: #ecf0f1; border-radius: 8px;">컬럼 2</div></div>`,
+                form: `<form id="element-${id}" style="background: #f8f9fa; padding: 25px; border-radius: 8px;"><input type="text" placeholder="이름" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 5px; font-size: 14px;"><input type="email" placeholder="이메일" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 5px; font-size: 14px;"><button type="submit" style="background: #2ecc71; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">제출</button></form>`,
+                card: `<div id="element-${id}" style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 25px; max-width: 350px;"><h3 style="color: #2c3e50; margin-bottom: 15px;">카드 제목</h3><p style="color: #7f8c8d; line-height: 1.6; margin-bottom: 20px;">카드 내용을 여기에 작성하세요. 이미지, 텍스트, 버튼 등을 추가할 수 있습니다.</p><button style="background: #3498db; color: white; padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer;">자세히 보기</button></div>`,
+                navbar: `<nav id="element-${id}" style="background: #2c3e50; padding: 15px 30px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;"><div style="color: white; font-size: 24px; font-weight: bold;">로고</div><div style="display: flex; gap: 25px;"><a href="#" style="color: white; text-decoration: none;">홈</a><a href="#" style="color: white; text-decoration: none;">소개</a><a href="#" style="color: white; text-decoration: none;">서비스</a><a href="#" style="color: white; text-decoration: none;">연락처</a></div></nav>`,
+                footer: `<footer id="element-${id}" style="background: #2c3e50; color: white; padding: 40px 30px; border-radius: 8px; text-align: center;"><p style="margin-bottom: 15px; font-size: 18px; font-weight: 600;">회사명</p><p style="color: #95a5a6; margin-bottom: 20px;">주소: 서울시 강남구 | 전화: 02-1234-5678 | 이메일: info@company.com</p><p style="color: #7f8c8d; font-size: 14px;">&copy; 2024 All rights reserved.</p></footer>`
+            };
+
+            return templates[type] || `<div id="element-${id}">알 수 없는 컴포넌트</div>`;
+        }
+
+        // 요소 선택
+        function selectElement(id) {
+            // 이전 선택 해제
+            document.querySelectorAll('.dropped-element').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // 새 요소 선택
+            const element = canvas.querySelector(`[data-id="${id}"]`);
+            if (element) {
+                element.classList.add('selected');
+                selectedElement = id;
+            }
+        }
+
+        // 요소 편집
+        function editElement(id) {
+            selectElement(id);
+            const element = canvas.querySelector(`[data-id="${id}"]`);
+            const type = element.dataset.type;
+
+            document.getElementById('propertiesPanel').classList.add('open');
+
+            const propertiesBody = document.getElementById('propertiesBody');
+            propertiesBody.innerHTML = getPropertiesForm(type, id);
+        }
+
+        // 속성 폼 생성
+        function getPropertiesForm(type, id) {
+            const element = document.getElementById(`element-${id}`);
+
+            let form = `<div class="property-group">
+                <label>요소 타입</label>
+                <input type="text" value="${type}" disabled>
+            </div>`;
+
+            if (type === 'heading' || type === 'paragraph') {
+                form += `<div class="property-group">
+                    <label>텍스트</label>
+                    <textarea id="prop-text" onchange="updateElementProperty(${id}, 'textContent', this.value)">${element.textContent}</textarea>
+                </div>
+                <div class="property-group">
+                    <label>텍스트 색상</label>
+                    <input type="color" value="${rgbToHex(element.style.color)}" onchange="updateElementProperty(${id}, 'color', this.value)">
+                </div>
+                <div class="property-group">
+                    <label>폰트 크기</label>
+                    <input type="number" value="${parseInt(element.style.fontSize) || 16}" onchange="updateElementProperty(${id}, 'fontSize', this.value + 'px')">
+                </div>`;
+            }
+
+            if (type === 'button') {
+                form += `<div class="property-group">
+                    <label>버튼 텍스트</label>
+                    <input type="text" value="${element.textContent}" onchange="updateElementProperty(${id}, 'textContent', this.value)">
+                </div>
+                <div class="property-group">
+                    <label>배경색</label>
+                    <input type="color" value="${rgbToHex(element.style.backgroundColor)}" onchange="updateElementProperty(${id}, 'backgroundColor', this.value)">
+                </div>`;
+            }
+
+            if (type === 'image') {
+                form += `<div class="property-group">
+                    <label>이미지 URL</label>
+                    <input type="text" value="${element.src}" onchange="updateElementProperty(${id}, 'src', this.value)">
+                </div>
+                <div class="property-group">
+                    <label>너비 (%)</label>
+                    <input type="number" min="10" max="100" value="100" onchange="updateElementProperty(${id}, 'width', this.value + '%')">
+                </div>`;
+            }
+
+            // 공통 속성
+            form += `<div class="property-group">
+                <label>여백 (Padding)</label>
+                <input type="number" value="${parseInt(element.style.padding) || 0}" onchange="updateElementProperty(${id}, 'padding', this.value + 'px')">
+            </div>
+            <div class="property-group">
+                <label>외부 여백 (Margin)</label>
+                <input type="number" value="${parseInt(element.style.margin) || 0}" onchange="updateElementProperty(${id}, 'margin', this.value + 'px')">
+            </div>`;
+
+            return form;
+        }
+
+        // 요소 속성 업데이트
+        function updateElementProperty(id, property, value) {
+            const element = document.getElementById(`element-${id}`);
+            if (element) {
+                if (property === 'textContent') {
+                    element.textContent = value;
+                } else if (property === 'src') {
+                    element.src = value;
+                } else {
+                    element.style[property] = value;
+                }
+                updatePreview();
+            }
+        }
+
+        // RGB to HEX 변환
+        function rgbToHex(rgb) {
+            if (!rgb || rgb === '') return '#000000';
+            if (rgb.startsWith('#')) return rgb;
+
+            const values = rgb.match(/\d+/g);
+            if (!values) return '#000000';
+
+            const hex = values.map(x => {
+                const hex = parseInt(x).toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+
+            return '#' + hex;
+        }
+
+        // 속성 패널 닫기
+        function closeProperties() {
+            document.getElementById('propertiesPanel').classList.remove('open');
+        }
+
+        // 요소 삭제
+        function deleteElement(id) {
+            if (confirm('이 요소를 삭제하시겠습니까?')) {
+                const element = canvas.querySelector(`[data-id="${id}"]`);
+                if (element) {
+                    element.remove();
+                    elements = elements.filter(e => e.id !== id);
+                    updatePreview();
+                    closeProperties();
+                    showToast('요소가 삭제되었습니다.', 'success');
+                }
+            }
+        }
+
+        // 캔버스 초기화
+        function clearCanvas() {
+            if (confirm('모든 요소를 삭제하시겠습니까?')) {
+                canvas.innerHTML = '<div class="canvas-placeholder">👈 왼쪽에서 컴포넌트를 드래그하여 여기에 놓으세요</div>';
+                elements = [];
+                elementCounter = 0;
+                updatePreview();
+                closeProperties();
+                showToast('캔버스가 초기화되었습니다.', 'success');
+            }
+        }
+
+        // 실시간 미리보기 업데이트
+        function updatePreview() {
+            const preview = document.getElementById('preview');
+            const canvasClone = canvas.cloneNode(true);
+
+            // 컨트롤 버튼 제거
+            canvasClone.querySelectorAll('.element-controls').forEach(el => el.remove());
+            canvasClone.querySelectorAll('.dropped-element').forEach(el => {
+                el.style.border = 'none';
+                el.style.boxShadow = 'none';
+            });
+
+            preview.innerHTML = canvasClone.innerHTML;
+        }
+
+        // 미리보기 크기 설정
+        function setPreviewSize(size) {
+            const preview = document.getElementById('preview');
+            const buttons = document.querySelectorAll('.device-btn');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            preview.className = `preview-frame ${size}`;
+        }
+
+        // 코드 내보내기
+        function exportCode() {
+            const canvasClone = canvas.cloneNode(true);
+
+            // 컨트롤 버튼과 편집 요소 제거
+            canvasClone.querySelectorAll('.element-controls').forEach(el => el.remove());
+            canvasClone.querySelectorAll('.canvas-placeholder').forEach(el => el.remove());
+            canvasClone.querySelectorAll('.dropped-element').forEach(el => {
+                const inner = el.innerHTML.replace(/<div class="element-controls">[\s\S]*?<\/div>/g, '');
+                el.outerHTML = inner;
+            });
+
+            const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 웹사이트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+${canvasClone.innerHTML}
+</body>
+</html>`;
+
+            // 다운로드
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'my-website.html';
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showToast('코드가 다운로드되었습니다!', 'success');
+        }
+
+        // 프로젝트 저장
+        function saveProject() {
+            const data = {
+                elements: elements.map(e => ({
+                    id: e.id,
+                    type: e.type,
+                    html: e.element.innerHTML
+                })),
+                counter: elementCounter
+            };
+
+            localStorage.setItem('website-builder-project', JSON.stringify(data));
+            showToast('프로젝트가 저장되었습니다!', 'success');
+        }
+
+        // 프로젝트 불러오기
+        function loadProject() {
+            const saved = localStorage.getItem('website-builder-project');
+            if (saved) {
+                const data = JSON.parse(saved);
+                elementCounter = data.counter;
+
+                // 플레이스홀더 제거
+                const placeholder = canvas.querySelector('.canvas-placeholder');
+                if (placeholder) placeholder.remove();
+
+                data.elements.forEach(elementData => {
+                    const element = document.createElement('div');
+                    element.className = 'dropped-element';
+                    element.dataset.id = elementData.id;
+                    element.dataset.type = elementData.type;
+                    element.innerHTML = elementData.html;
+
+                    element.addEventListener('click', (e) => {
+                        if (!e.target.classList.contains('control-btn')) {
+                            selectElement(elementData.id);
+                        }
+                    });
+
+                    canvas.appendChild(element);
+                    elements.push({
+                        id: elementData.id,
+                        type: elementData.type,
+                        element: element
+                    });
+                });
+
+                updatePreview();
+                showToast('프로젝트가 불러와졌습니다!', 'success');
+            }
+        }
+
+        // 토스트 알림
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // 페이지 로드 시 프로젝트 불러오기
+        window.addEventListener('load', () => {
+            loadProject();
+        });
+
+        // contenteditable 요소 변경 시 미리보기 업데이트
+        canvas.addEventListener('input', (e) => {
+            if (e.target.isContentEditable) {
+                updatePreview();
+            }
+        });
+    </script>
+</body>
+</html>
