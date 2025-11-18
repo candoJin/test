@@ -1,10 +1,11 @@
 import { DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 import { BuilderProvider, useBuilder } from './context/BuilderContext';
 import ComponentPanel from './components/ComponentPanel';
 import Canvas from './components/Canvas';
 import Preview from './components/Preview';
-import PropertiesPanel from './components/PropertiesPanel';
+import AdvancedPropertiesPanel from './components/AdvancedPropertiesPanel';
+import LayersPanel from './components/LayersPanel';
 
 function BuilderContent() {
   const { elements, addElement, setElements, setIsDragging, selectedElement } = useBuilder();
@@ -52,11 +53,14 @@ function BuilderContent() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen overflow-hidden bg-gray-900">
         <ComponentPanel />
         <Canvas />
-        <Preview />
-        {selectedElement && <PropertiesPanel />}
+        <div className="flex">
+          <LayersPanel />
+          <Preview />
+        </div>
+        {selectedElement && <AdvancedPropertiesPanel />}
       </div>
       <DragOverlay>
         {/* Optional: Add a preview of the dragged item */}

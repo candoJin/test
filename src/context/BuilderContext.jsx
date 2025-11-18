@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const BuilderContext = createContext();
 
@@ -13,8 +13,13 @@ export const useBuilder = () => {
 export const BuilderProvider = ({ children }) => {
   const [elements, setElements] = useState([]);
   const [selectedElement, setSelectedElement] = useState(null);
-  const [previewMode, setPreviewMode] = useState('desktop'); // desktop, tablet, mobile
+  const [previewMode, setPreviewMode] = useState('desktop');
   const [isDragging, setIsDragging] = useState(false);
+  const [clipboard, setClipboard] = useState(null);
+
+  // History for undo/redo
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   // Load project from localStorage on mount
   useEffect(() => {
@@ -23,6 +28,10 @@ export const BuilderProvider = ({ children }) => {
       try {
         const data = JSON.parse(saved);
         setElements(data.elements || []);
+        if (data.elements && data.elements.length > 0) {
+          setHistory([data.elements]);
+          setHistoryIndex(0);
+        }
       } catch (error) {
         console.error('Failed to load project:', error);
       }
@@ -36,41 +45,110 @@ export const BuilderProvider = ({ children }) => {
     }
   }, [elements]);
 
-  const addElement = (type, position = null) => {
+  // Add to history
+  const addToHistory = useCallback((newElements) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(JSON.parse(JSON.stringify(newElements)));
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  }, [history, historyIndex]);
+
+  // Undo
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      setElements(JSON.parse(JSON.stringify(history[historyIndex - 1])));
+    }
+  }, [history, historyIndex]);
+
+  // Redo
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setElements(JSON.parse(JSON.stringify(history[historyIndex + 1])));
+    }
+  }, [history, historyIndex]);
+
+  const addElement = (type, position = null, parentId = null) => {
     const newElement = {
       id: `element-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type,
       props: getDefaultProps(type),
-      children: type === 'columns' ? ['', ''] : null,
+      children: [],
+      parentId: parentId,
     };
 
+    let newElements;
     if (position !== null) {
-      const newElements = [...elements];
+      newElements = [...elements];
       newElements.splice(position, 0, newElement);
-      setElements(newElements);
     } else {
-      setElements([...elements, newElement]);
+      newElements = [...elements, newElement];
     }
 
+    setElements(newElements);
+    addToHistory(newElements);
     return newElement.id;
   };
 
   const updateElement = (id, updates) => {
-    setElements(elements.map(el =>
+    const newElements = elements.map(el =>
       el.id === id ? { ...el, ...updates } : el
-    ));
+    );
+    setElements(newElements);
+    addToHistory(newElements);
   };
 
   const updateElementProps = (id, props) => {
-    setElements(elements.map(el =>
+    const newElements = elements.map(el =>
       el.id === id ? { ...el, props: { ...el.props, ...props } } : el
-    ));
+    );
+    setElements(newElements);
+    addToHistory(newElements);
   };
 
   const deleteElement = (id) => {
-    setElements(elements.filter(el => el.id !== id));
+    const newElements = elements.filter(el => el.id !== id);
+    setElements(newElements);
+    addToHistory(newElements);
     if (selectedElement === id) {
       setSelectedElement(null);
+    }
+  };
+
+  const duplicateElement = (id) => {
+    const element = elements.find(el => el.id === id);
+    if (element) {
+      const newElement = {
+        ...JSON.parse(JSON.stringify(element)),
+        id: `element-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      };
+      const index = elements.findIndex(el => el.id === id);
+      const newElements = [...elements];
+      newElements.splice(index + 1, 0, newElement);
+      setElements(newElements);
+      addToHistory(newElements);
+      return newElement.id;
+    }
+  };
+
+  const copyElement = (id) => {
+    const element = elements.find(el => el.id === id);
+    if (element) {
+      setClipboard(JSON.parse(JSON.stringify(element)));
+    }
+  };
+
+  const pasteElement = () => {
+    if (clipboard) {
+      const newElement = {
+        ...JSON.parse(JSON.stringify(clipboard)),
+        id: `element-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      };
+      const newElements = [...elements, newElement];
+      setElements(newElements);
+      addToHistory(newElements);
+      setSelectedElement(newElement.id);
     }
   };
 
@@ -79,12 +157,15 @@ export const BuilderProvider = ({ children }) => {
     const [movedElement] = newElements.splice(fromIndex, 1);
     newElements.splice(toIndex, 0, movedElement);
     setElements(newElements);
+    addToHistory(newElements);
   };
 
   const clearAll = () => {
     if (window.confirm('모든 요소를 삭제하시겠습니까?')) {
       setElements([]);
       setSelectedElement(null);
+      setHistory([]);
+      setHistoryIndex(-1);
       localStorage.removeItem('website-builder-project');
     }
   };
@@ -135,9 +216,9 @@ ${html}
       button: `<button class="${props.className || ''}" style="${props.style || ''}">${props.text || '버튼'}</button>`,
       image: `<img src="${props.src || 'https://via.placeholder.com/400x200'}" alt="${props.alt || '이미지'}" class="${props.className || ''}" style="${props.style || ''}" />`,
       video: `<div class="${props.className || ''}" style="${props.style || ''}"><video controls style="width: 100%;"><source src="${props.src || ''}" type="video/mp4">비디오를 지원하지 않는 브라우저입니다.</video></div>`,
-      container: `<div class="${props.className || ''}" style="${props.style || ''}">컨테이너 영역</div>`,
+      container: `<div class="${props.className || ''}" style="${props.style || ''}">${props.content || '컨테이너 영역'}</div>`,
       section: `<section class="${props.className || ''}" style="${props.style || ''}"><h2>${props.title || '섹션 제목'}</h2><p>${props.content || '섹션 내용'}</p></section>`,
-      columns: `<div class="${props.className || ''}" style="${props.style || ''}"><div class="flex gap-4"><div class="flex-1 p-4 bg-gray-100 rounded">${children?.[0] || '컬럼 1'}</div><div class="flex-1 p-4 bg-gray-100 rounded">${children?.[1] || '컬럼 2'}</div></div></div>`,
+      columns: `<div class="${props.className || ''}" style="${props.style || ''}"><div class="flex gap-4"><div class="flex-1 p-4 bg-gray-100 rounded">${props.column1 || '컬럼 1'}</div><div class="flex-1 p-4 bg-gray-100 rounded">${props.column2 || '컬럼 2'}</div></div></div>`,
       form: `<form class="${props.className || ''}" style="${props.style || ''}"><input type="text" placeholder="이름" class="w-full p-3 mb-3 border-2 border-gray-300 rounded"><input type="email" placeholder="이메일" class="w-full p-3 mb-3 border-2 border-gray-300 rounded"><button type="submit" class="bg-green-500 text-white px-6 py-3 rounded font-semibold">제출</button></form>`,
       card: `<div class="${props.className || ''}" style="${props.style || ''}"><div class="bg-white rounded-lg shadow-lg p-6 max-w-sm"><h3 class="text-xl font-bold mb-3">${props.title || '카드 제목'}</h3><p class="text-gray-600 mb-4">${props.content || '카드 내용'}</p><button class="bg-blue-500 text-white px-6 py-2 rounded">자세히 보기</button></div></div>`,
       navbar: `<nav class="${props.className || ''}" style="${props.style || ''}"><div class="bg-gray-800 text-white p-4 flex justify-between items-center"><div class="text-2xl font-bold">${props.logo || '로고'}</div><div class="flex gap-6"><a href="#" class="hover:text-blue-400">홈</a><a href="#" class="hover:text-blue-400">소개</a><a href="#" class="hover:text-blue-400">서비스</a><a href="#" class="hover:text-blue-400">연락처</a></div></div></nav>`,
@@ -152,6 +233,9 @@ ${html}
     selectedElement,
     previewMode,
     isDragging,
+    clipboard,
+    canUndo: historyIndex > 0,
+    canRedo: historyIndex < history.length - 1,
     setIsDragging,
     setElements,
     setSelectedElement,
@@ -160,9 +244,14 @@ ${html}
     updateElement,
     updateElementProps,
     deleteElement,
+    duplicateElement,
+    copyElement,
+    pasteElement,
     moveElement,
     clearAll,
     exportHTML,
+    undo,
+    redo,
   };
 
   return (
@@ -202,6 +291,7 @@ function getDefaultProps(type) {
       style: '',
     },
     container: {
+      content: '컨테이너 영역',
       className: 'container mx-auto p-8 bg-gray-100 rounded-lg',
       style: '',
     },
@@ -212,6 +302,8 @@ function getDefaultProps(type) {
       style: '',
     },
     columns: {
+      column1: '컬럼 1',
+      column2: '컬럼 2',
       className: 'grid grid-cols-2 gap-6',
       style: '',
     },
