@@ -2,9 +2,10 @@
 
 전문가가 사용하기에도 충분한 완벽한 비주얼 웹사이트 빌더! Tailwind CSS의 모든 기능을 최대한 활용할 수 있습니다.
 
-![React](https://img.shields.io/badge/React-18.3-blue?style=flat&logo=react)
-![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?style=flat&logo=vite)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=flat&logo=tailwind-css)
+![React](https://img.shields.io/badge/React-19.2-blue?style=flat&logo=react)
+![Vite](https://img.shields.io/badge/Vite-7.2-646CFF?style=flat&logo=vite)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-38B2AC?style=flat&logo=tailwind-css)
+![Node.js](https://img.shields.io/badge/Node.js-20.19+_|_22.12+-339933?style=flat&logo=node.js)
 ![dnd-kit](https://img.shields.io/badge/dnd--kit-latest-green?style=flat)
 
 ## ✨ 주요 기능
@@ -130,6 +131,32 @@
 
 ## 🚀 시작하기
 
+### ⚡ 요구사항
+
+**Node.js 버전**: **20.19.0 이상** 또는 **22.12.0 이상**
+
+Vite 7.x는 Node.js 20.19+ 또는 22.12+ 버전이 필요합니다. `crypto.hash()` 함수가 Node.js v20.12.0부터 지원되기 때문입니다.
+
+현재 Node.js 버전 확인:
+```bash
+node --version
+```
+
+#### Node.js 업그레이드 방법
+
+**nvm 사용 (권장):**
+```bash
+# nvm이 설치되어 있다면
+nvm install 22.12.0
+nvm use 22.12.0
+
+# 또는 프로젝트 디렉토리에서 .nvmrc 파일 사용
+nvm use
+```
+
+**직접 다운로드:**
+- [Node.js 공식 사이트](https://nodejs.org/)에서 최신 LTS 버전 다운로드
+
 ### 설치
 
 ```bash
@@ -184,9 +211,9 @@ npm run preview
 
 ## 🛠️ 기술 스택
 
-- **React 18.3**: 최신 React 훅과 Context API
-- **Vite 6.0**: 초고속 개발 서버 및 빌드
-- **Tailwind CSS 4.0**: 최신 유틸리티 기반 CSS 프레임워크
+- **React 19.2**: 최신 React 훅과 Context API
+- **Vite 7.2**: 초고속 개발 서버 및 빌드 (Node.js 20.19+ 또는 22.12+ 필요)
+- **Tailwind CSS 4.1**: 최신 유틸리티 기반 CSS 프레임워크
 - **@dnd-kit**: 프로페셔널 드래그 앤 드롭 라이브러리
 - **lucide-react**: 아름다운 SVG 아이콘 라이브러리
 - **Context API**: React 전역 상태 관리
